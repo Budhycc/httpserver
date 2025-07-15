@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Latihan Web Server</title>
+    <title>Manajemen Keuangan Pribadi</title>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.7/css/bootstrap.min.css"
@@ -11,9 +11,9 @@
   </head>
   <body>
     <div class="container" style="padding-top: 3em">
-      <h1>Latihan Web Server</h1>
-      <h3>Data Siswa</h3>
-      <table class="table table-bordered" id="table-data">
+      <h1>Manajemen Keuangan Pribadi</h1>
+      <h3>Transaksi</h3>
+      <table class="table table-bordered" id="table-transactions">
         <thead>
           <tr>
             <th colspan="6">
@@ -23,17 +23,16 @@
                 data-bs-toggle="modal"
                 data-bs-target="#form-modal"
               >
-                New
+                New Transaction
               </button>
             </th>
           </tr>
           <tr>
             <th>#</th>
-            <th>NIS</th>
-            <th>Nama</th>
-            <th>Alamat</th>
-            <th>Tempat Lahir</th>
-            <th>Tanggal Lahir</th>
+            <th>Deskripsi</th>
+            <th>Jumlah</th>
+            <th>Tanggal</th>
+            <th>Kategori</th>
             <th>Aksi</th>
           </tr>
         </thead>
@@ -58,7 +57,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h1 class="modal-title fs-5" id="staticBackdropLabel">
-              Form Siswa
+              Form Transaksi
             </h1>
             <button
               type="button"
@@ -68,31 +67,22 @@
             ></button>
           </div>
           <div class="modal-body">
+            <input type="hidden" id="id" />
             <div class="mb-3">
-              <label for="nis" class="form-label"
-                >Nomor Induk Siswa (NIS)
-              </label>
-
-              <input type="text" class="form-control" id="nis" />
+              <label for="description" class="form-label">Deskripsi</label>
+              <input type="text" class="form-control" id="description" />
             </div>
             <div class="mb-3">
-              <label for="nama" class="form-label">Nama</label>
-              <input type="text" class="form-control" id="nama" />
+              <label for="amount" class="form-label">Jumlah</label>
+              <input type="number" class="form-control" id="amount" />
             </div>
             <div class="mb-3">
-              <label for="alamat" class="form-label">Alamat</label>
-              <input type="text" class="form-control" id="alamat" />
+              <label for="date" class="form-label">Tanggal</label>
+              <input type="date" class="form-control" id="date" />
             </div>
             <div class="mb-3">
-              <label for="tempat_lahir" class="form-label">Tempat Lahir</label>
-              <input type="text" class="form-control" id="tempat_lahir" />
-            </div>
-            <div class="mb-3">
-              <label for="tanggal_lahir" class="form-label"
-                >Tanggal Lahir
-              </label>
-
-              <input type="text" class="form-control" id="tanggal_lahir" />
+              <label for="category" class="form-label">Kategori</label>
+              <select class="form-select" id="category"></select>
             </div>
           </div>
           <div class="modal-footer">
@@ -104,7 +94,6 @@
             >
               Close
             </button>
-
             <button type="button" class="btn btn-primary" id="btn-save">
               Save
             </button>
@@ -113,7 +102,6 @@
       </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.7/js/bootstrap.bundle.min.js"></script>
-
     <script src="js/script.js"></script>
   </body>
 </html>

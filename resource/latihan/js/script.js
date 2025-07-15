@@ -1,139 +1,117 @@
-function buildTable(dataSiswa) {
-  if (dataSiswa.length < 1) return;
-  const table = document.getElementById("table-data");
+let categories = [];
+
+function buildTable(transactions) {
+  const table = document.getElementById("table-transactions");
   const tbody = table.querySelector("tbody");
   tbody.replaceChildren();
   let i = 1;
-  dataSiswa.forEach((siswa) => {
-    const col = document.createElement("td");
-    col.appendChild(document.createTextNode(i));
+  transactions.forEach((transaction) => {
     const row = document.createElement("tr");
-    row.appendChild(col);
-    ["nis", "nama", "alamat", "tempat_lahir", "tanggal_lahir"].forEach(
-      (key) => {
-        const c = document.createElement("td");
-        if (Object.hasOwn(siswa, key)) {
-          c.appendChild(document.createTextNode(siswa[key]));
-        }
-        row.appendChild(c);
-      }
-    );
-    const actionCol = document.createElement("td");
-    const editButton = document.createElement("button");
-    editButton.textContent = "Edit";
-    editButton.className = "btn btn-sm btn-warning me-2";
-    editButton.addEventListener("click", () => showEditForm(siswa));
-    actionCol.appendChild(editButton);
-
-    const deleteButton = document.createElement("button");
-    deleteButton.textContent = "Delete";
-    deleteButton.className = "btn btn-sm btn-danger";
-    deleteButton.addEventListener("click", () => deleteSiswa(siswa.nis));
-    actionCol.appendChild(deleteButton);
-
-    row.appendChild(actionCol);
+    row.innerHTML = `
+      <td>${i}</td>
+      <td>${transaction.description}</td>
+      <td>${transaction.amount}</td>
+      <td>${transaction.date}</td>
+      <td>${getCategoryName(transaction.categoryId)}</td>
+      <td>
+        <button class="btn btn-sm btn-warning me-2" onclick="showEditForm(${transaction.id})">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteTransaction(${transaction.id})">Delete</button>
+      </td>
+    `;
     tbody.appendChild(row);
     i++;
   });
 }
 
-function showEditForm(siswa) {
-  document.getElementById("nis").value = siswa.nis;
-  document.getElementById("nama").value = siswa.nama;
-  document.getElementById("alamat").value = siswa.alamat;
-  document.getElementById("tempat_lahir").value = siswa.tempat_lahir;
-  document.getElementById("tanggal_lahir").value = siswa.tanggal_lahir;
+function getCategoryName(categoryId) {
+  const category = categories.find((c) => c.id === categoryId);
+  return category ? category.name : "Unknown";
+}
+
+function populateCategories() {
+  const select = document.getElementById("category");
+  select.replaceChildren();
+  categories.forEach((category) => {
+    const option = document.createElement("option");
+    option.value = category.id;
+    option.textContent = category.name;
+    select.appendChild(option);
+  });
+}
+
+function showEditForm(id) {
+  const transaction = transactions.find((t) => t.id === id);
+  document.getElementById("id").value = transaction.id;
+  document.getElementById("description").value = transaction.description;
+  document.getElementById("amount").value = transaction.amount;
+  document.getElementById("date").value = transaction.date;
+  document.getElementById("category").value = transaction.categoryId;
 
   document.getElementById("btn-save").textContent = "Update";
   document.getElementById("form-modal").dataset.mode = "update";
-  document.getElementById("form-modal").dataset.nis = siswa.nis;
 
   const modal = new bootstrap.Modal(document.getElementById("form-modal"));
   modal.show();
 }
 
-function deleteSiswa(nis) {
-  if (confirm("Are you sure you want to delete this data?")) {
-    fetch(`/api/data-siswa/${nis}`, { method: "DELETE" }).then(() => {
-      initialize()
-        .then((data) => store(data))
-        .then((data) => buildTable(data));
+function deleteTransaction(id) {
+  if (confirm("Are you sure you want to delete this transaction?")) {
+    fetch(`/api/transactions/${id}`, { method: "DELETE" }).then(() => {
+      loadData();
     });
   }
 }
 
-function initialize() {
-  return new Promise((resolve) => {
-    const data = JSON.parse(sessionStorage.getItem("data-siswa") || "[]");
-    if (data.length > 1) {
-      resolve(data);
-    } else {
-      resolve(fetch("/api/data-siswa").then((res) => res.json()));
-    }
+function loadData() {
+  Promise.all([
+    fetch("/api/categories").then((res) => res.json()),
+    fetch("/api/transactions").then((res) => res.json()),
+  ]).then(([cats, trans]) => {
+    categories = cats;
+    transactions = trans;
+    populateCategories();
+    buildTable(transactions);
   });
 }
-
-function append(row) {
-  return new Promise((resolve) => {
-    let data = JSON.parse(sessionStorage.getItem("data-siswa") || "[]");
-    data.push(row);
-    resolve(data);
-  });
-}
-
-function store(data) {
-  return new Promise((resolve) => {
-    sessionStorage.setItem("data-siswa", JSON.stringify(data));
-    resolve(data);
-  });
-}
-
-initialize()
-  .then((data) => store(data))
-  .then((data) => buildTable(data));
 
 document.getElementById("btn-save").addEventListener("click", (e) => {
   const formModal = document.getElementById("form-modal");
   const mode = formModal.dataset.mode;
-  const nis = formModal.dataset.nis;
+  const id = document.getElementById("id").value;
 
-  const data = {};
-  ["nis", "nama", "alamat", "tempat_lahir", "tanggal_lahir"].forEach((key) => {
-    data[key] = document.getElementById(key).value;
-    document.getElementById(key).value = "";
-  });
+  const data = {
+    description: document.getElementById("description").value,
+    amount: document.getElementById("amount").value,
+    date: document.getElementById("date").value,
+    categoryId: document.getElementById("category").value,
+  };
 
+  let method = "POST";
+  let url = "/api/transactions";
   if (mode === "update") {
-    const opt = {
-      method: "PUT",
-      body: new URLSearchParams(data),
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    };
-    fetch(`/api/data-siswa/${nis}`, opt)
-      .then(() => {
-        initialize()
-          .then((data) => store(data))
-          .then((data) => buildTable(data));
-      });
-  } else {
-    const opt = {
-      method: "POST",
-      body: new URLSearchParams(data),
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    };
-    fetch("/api/data-siswa", opt)
-      .then((response) => response.json())
-      .then((siswa) => append(siswa))
-      .then((dataSiswa) => store(dataSiswa))
-      .then((dataSiswa) => buildTable(dataSiswa));
+    method = "PUT";
+    data.id = id;
   }
 
-  const modal = bootstrap.Modal.getInstance(formModal);
-  modal.hide();
-  formModal.dataset.mode = "create";
-  document.getElementById("btn-save").textContent = "Save";
+  fetch(url, {
+    method: method,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  })
+    .then(() => {
+      loadData();
+      const modal = bootstrap.Modal.getInstance(formModal);
+      modal.hide();
+      formModal.dataset.mode = "create";
+      document.getElementById("btn-save").textContent = "Save";
+      document.getElementById("id").value = "";
+      document.getElementById("description").value = "";
+      document.getElementById("amount").value = "";
+      document.getElementById("date").value = "";
+      document.getElementById("category").value = "";
+    });
 });
+
+loadData();

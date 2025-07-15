@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Latihan Web Server</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.7/css/bootstrap.min.css"
+    />
+  </head>
+  <body>
+    <div class="container" style="padding-top: 3em">
+      <h1>Latihan Web Server</h1>
+      <h3>Data Siswa</h3>
+      <table class="table table-bordered" id="table-data">
+        <thead>
+          <tr>
+            <th colspan="6">
+              <button
+                type="button"
+                class="btn btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#form-modal"
+              >
+                New
+              </button>
+            </th>
+          </tr>
+          <tr>
+            <th>#</th>
+            <th>NIS</th>
+            <th>Nama</th>
+            <th>Alamat</th>
+            <th>Tempat Lahir</th>
+            <th>Tanggal Lahir</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="6">Tidak ada data</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- form modal -->
+    <div
+      class="modal fade"
+      id="form-modal"
+      data-bs-backdrop="static"
+      data-bs-keyboard="false"
+      tabindex="-1"
+      aria-labelledby="staticBackdropLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="staticBackdropLabel">
+              Form Siswa
+            </h1>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="nis" class="form-label"
+                >Nomor Induk Siswa (NIS)
+              </label>
+
+              <input type="text" class="form-control" id="nis" />
+            </div>
+            <div class="mb-3">
+              <label for="nama" class="form-label">Nama</label>
+              <input type="text" class="form-control" id="nama" />
+            </div>
+            <div class="mb-3">
+              <label for="alamat" class="form-label">Alamat</label>
+              <input type="text" class="form-control" id="alamat" />
+            </div>
+            <div class="mb-3">
+              <label for="tempat_lahir" class="form-label">Tempat Lahir</label>
+              <input type="text" class="form-control" id="tempat_lahir" />
+            </div>
+            <div class="mb-3">
+              <label for="tanggal_lahir" class="form-label"
+                >Tanggal Lahir
+              </label>
+
+              <input type="text" class="form-control" id="tanggal_lahir" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            >
+              Close
+            </button>
+
+            <button type="button" class="btn btn-primary" id="btn-save">
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.7/js/bootstrap.bundle.min.js"></script>
+
+    <script src="js/script.js"></script>
+  </body>
+</html>

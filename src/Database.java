@@ -107,4 +107,68 @@ public class Database {
             e.printStackTrace();
         }
     }
+
+    public Map<String, Double> getDailyReport() {
+        Map<String, Double> report = new HashMap<>();
+        String sql = "SELECT DATE(date) as report_date, SUM(amount) as total FROM transactions GROUP BY report_date";
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                report.put(rs.getString("report_date"), rs.getDouble("total"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return report;
+    }
+
+    public Map<String, Double> getWeeklyReport() {
+        Map<String, Double> report = new HashMap<>();
+        String sql = "SELECT YEARWEEK(date) as report_week, SUM(amount) as total FROM transactions GROUP BY report_week";
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                report.put(rs.getString("report_week"), rs.getDouble("total"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return report;
+    }
+
+    public Map<String, Double> getMonthlyReport() {
+        Map<String, Double> report = new HashMap<>();
+        String sql = "SELECT DATE_FORMAT(date, '%Y-%m') as report_month, SUM(amount) as total FROM transactions GROUP BY report_month";
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                report.put(rs.getString("report_month"), rs.getDouble("total"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return report;
+    }
+
+    public Map<String, Double> getYearlyReport() {
+        Map<String, Double> report = new HashMap<>();
+        String sql = "SELECT YEAR(date) as report_year, SUM(amount) as total FROM transactions GROUP BY report_year";
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                report.put(rs.getString("report_year"), rs.getDouble("total"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return report;
+    }
 }

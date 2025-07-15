@@ -49,6 +49,37 @@ public class WebServer {
         server.createContext("/", staticHandler);
         server.createContext("/api/categories", this::handleCategories);
         server.createContext("/api/transactions", this::handleTransactions);
+        server.createContext("/api/reports", this::handleReports);
+    }
+
+    private void handleReports(HttpExchange exchange) throws IOException {
+        if (!"GET".equals(exchange.getRequestMethod())) {
+            exchange.sendResponseHeaders(405, -1);
+            return;
+        }
+
+        var query = exchange.getRequestURI().getQuery();
+        var params = query.split("=");
+        if (params.length != 2 || !params[0].equals("type")) {
+            exchange.sendResponseHeaders(400, -1);
+            return;
+        }
+
+        var type = params[1];
+        Object reportData;
+        switch (type) {
+            case "daily" -> reportData = db.getDailyReport();
+            case "weekly" -> reportData = db.getWeeklyReport();
+            case "monthly" -> reportData = db.getMonthlyReport();
+            case "yearly" -> reportData = db.getYearlyReport();
+            default -> {
+                exchange.sendResponseHeaders(400, -1);
+                return;
+            }
+        }
+
+        var json = gson.toJson(reportData);
+        sendResponse(exchange, 200, json);
     }
 
     private void handleCategories(HttpExchange exchange) throws IOException {

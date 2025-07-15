@@ -1,3 +1,3 @@
 @echo off
 
-java -cp classes latihan.Main
+java -cp "classes;lib/*" latihan.Main

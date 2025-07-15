@@ -15,7 +15,7 @@ public class WebServer {
 
     private final Main main;
     private final int port;
-    private final List<Map<String, String>> dataSiswa = new ArrayList<>();
+    private final Database db = new Database();
     private boolean started = false;
     private HttpServer server;
 
@@ -66,6 +66,7 @@ public class WebServer {
         };
 
         HttpHandler getHandler = exchange -> {
+            var dataSiswa = db.getAllSiswa();
             var content = listToJsonArray(dataSiswa).getBytes();
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, content.length);
@@ -89,13 +90,46 @@ public class WebServer {
                     return;
                 }
             }
-            dataSiswa.add(map);
-            var content = mapToJsonObject(map).getBytes();
+            var siswa = db.addSiswa(map);
+            if (siswa == null) {
+                exchange.sendResponseHeaders(500, -1);
+                return;
+            }
+            var content = mapToJsonObject(siswa).getBytes();
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(201, content.length);
             var out = exchange.getResponseBody();
             out.write(content);
             out.close();
+        };
+
+        HttpHandler putHandler = exchange -> {
+            var path = exchange.getRequestURI().getPath();
+            var nis = path.substring(path.lastIndexOf('/') + 1);
+            var body = new String(exchange.getRequestBody().readAllBytes());
+            var map = new HashMap<String, String>();
+            for (var field : body.split("&")) {
+                String[] pair = field.split("=");
+                map.put(pair[0], URLDecoder.decode(pair[1], Charset.defaultCharset()));
+            }
+            var siswa = db.updateSiswa(nis, map);
+            if (siswa == null) {
+                exchange.sendResponseHeaders(500, -1);
+                return;
+            }
+            var content = mapToJsonObject(siswa).getBytes();
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, content.length);
+            var out = exchange.getResponseBody();
+            out.write(content);
+            out.close();
+        };
+
+        HttpHandler deleteHandler = exchange -> {
+            var path = exchange.getRequestURI().getPath();
+            var nis = path.substring(path.lastIndexOf('/') + 1);
+            db.deleteSiswa(nis);
+            exchange.sendResponseHeaders(204, -1);
         };
 
         HttpContext[] contexts = new HttpContext[3];
@@ -104,12 +138,11 @@ public class WebServer {
         contexts[1] = server.createContext("/static", staticHandler);
         contexts[2] = server.createContext("/api/data-siswa", exchange -> {
             switch (exchange.getRequestMethod()) {
-                case "GET" ->
-                    getHandler.handle(exchange);
-                case "POST" ->
-                    postHandler.handle(exchange);
-                default ->
-                    exchange.sendResponseHeaders(405, -1);
+                case "GET" -> getHandler.handle(exchange);
+                case "POST" -> postHandler.handle(exchange);
+                case "PUT" -> putHandler.handle(exchange);
+                case "DELETE" -> deleteHandler.handle(exchange);
+                default -> exchange.sendResponseHeaders(405, -1);
             }
         });
         for (var context : contexts) {

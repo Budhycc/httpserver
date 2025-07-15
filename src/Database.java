@@ -16,68 +16,92 @@ public class Database {
         return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
     }
 
-    public List<Map<String, String>> getAllSiswa() {
-        List<Map<String, String>> dataSiswa = new ArrayList<>();
+    public List<Category> getAllCategories() {
+        List<Category> categories = new ArrayList<>();
+        String sql = "SELECT * FROM categories";
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM siswa")) {
+             ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                Map<String, String> siswa = new HashMap<>();
-                siswa.put("nis", rs.getString("nis"));
-                siswa.put("nama", rs.getString("nama"));
-                siswa.put("alamat", rs.getString("alamat"));
-                siswa.put("tempat_lahir", rs.getString("tempat_lahir"));
-                siswa.put("tanggal_lahir", rs.getString("tanggal_lahir"));
-                dataSiswa.add(siswa);
+                categories.add(new Category(rs.getInt("id"), rs.getString("name")));
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return dataSiswa;
+        return categories;
     }
 
-    public Map<String, String> addSiswa(Map<String, String> siswa) {
-        String sql = "INSERT INTO siswa (nis, nama, alamat, tempat_lahir, tanggal_lahir) VALUES (?, ?, ?, ?, ?)";
+    public List<Transaction> getAllTransactions() {
+        List<Transaction> transactions = new ArrayList<>();
+        String sql = "SELECT * FROM transactions";
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                transactions.add(new Transaction(
+                        rs.getInt("id"),
+                        rs.getString("description"),
+                        rs.getBigDecimal("amount"),
+                        rs.getDate("date").toLocalDate(),
+                        rs.getInt("category_id")
+                ));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return transactions;
+    }
+
+    public Transaction addTransaction(Transaction transaction) {
+        String sql = "INSERT INTO transactions (description, amount, date, category_id) VALUES (?, ?, ?, ?)";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            pstmt.setString(1, transaction.getDescription());
+            pstmt.setBigDecimal(2, transaction.getAmount());
+            pstmt.setDate(3, Date.valueOf(transaction.getDate()));
+            pstmt.setInt(4, transaction.getCategoryId());
+            int affectedRows = pstmt.executeUpdate();
+
+            if (affectedRows > 0) {
+                try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        transaction.setId(rs.getInt(1));
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+        return transaction;
+    }
+
+    public Transaction updateTransaction(Transaction transaction) {
+        String sql = "UPDATE transactions SET description = ?, amount = ?, date = ?, category_id = ? WHERE id = ?";
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, siswa.get("nis"));
-            pstmt.setString(2, siswa.get("nama"));
-            pstmt.setString(3, siswa.get("alamat"));
-            pstmt.setString(4, siswa.get("tempat_lahir"));
-            pstmt.setString(5, siswa.get("tanggal_lahir"));
+            pstmt.setString(1, transaction.getDescription());
+            pstmt.setBigDecimal(2, transaction.getAmount());
+            pstmt.setDate(3, Date.valueOf(transaction.getDate()));
+            pstmt.setInt(4, transaction.getCategoryId());
+            pstmt.setInt(5, transaction.getId());
             pstmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
         }
-        return siswa;
+        return transaction;
     }
 
-    public Map<String, String> updateSiswa(String nis, Map<String, String> siswa) {
-        String sql = "UPDATE siswa SET nama = ?, alamat = ?, tempat_lahir = ?, tanggal_lahir = ? WHERE nis = ?";
+    public void deleteTransaction(int id) {
+        String sql = "DELETE FROM transactions WHERE id = ?";
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, siswa.get("nama"));
-            pstmt.setString(2, siswa.get("alamat"));
-            pstmt.setString(3, siswa.get("tempat_lahir"));
-            pstmt.setString(4, siswa.get("tanggal_lahir"));
-            pstmt.setString(5, nis);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
-        return siswa;
-    }
-
-    public void deleteSiswa(String nis) {
-        String sql = "DELETE FROM siswa WHERE nis = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, nis);
+            pstmt.setInt(1, id);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

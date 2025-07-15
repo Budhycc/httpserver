@@ -1,15 +1,11 @@
 package latihan;
 
 import com.sun.net.httpserver.*;
-
-import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.URLDecoder;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import java.time.LocalDate;
 
 public class WebServer {
 
@@ -18,6 +14,9 @@ public class WebServer {
     private final Database db = new Database();
     private boolean started = false;
     private HttpServer server;
+    private final Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
+            .create();
 
     public WebServer(Main main, int port) {
         this.main = main;
@@ -25,7 +24,7 @@ public class WebServer {
     }
 
     public void initialize() throws IOException {
-        HttpHandler viewHandler = exchange -> {
+        HttpHandler staticHandler = exchange -> {
             if (!exchange.getRequestMethod().equals("GET")) {
                 exchange.sendResponseHeaders(405, -1);
                 return;
@@ -36,7 +35,7 @@ public class WebServer {
             }
             path = path.substring(1);
             try (var in = getClass().getResourceAsStream(path)) {
-                var content = Objects.requireNonNull(in).readAllBytes();
+                var content = in.readAllBytes();
                 exchange.sendResponseHeaders(200, content.length);
                 var out = exchange.getResponseBody();
                 out.write(content);
@@ -46,144 +45,56 @@ public class WebServer {
             }
         };
 
-        HttpHandler staticHandler = exchange -> {
-            if (!exchange.getRequestMethod().equals("GET")) {
-                exchange.sendResponseHeaders(405, -1);
-                return;
-            }
-            var path = Path.of(exchange.getRequestURI().getPath().substring(1));
-            if (!Files.exists(path)) {
-                exchange.sendResponseHeaders(404, -1);
-                return;
-            }
-            var content = Files.readAllBytes(path);
-            var type = Files.probeContentType(path);
-            exchange.getResponseHeaders().set("Content-Type", type);
-            exchange.sendResponseHeaders(200, content.length);
-            var out = exchange.getResponseBody();
-            out.write(content);
-            out.close();
-        };
-
-        HttpHandler getHandler = exchange -> {
-            var dataSiswa = db.getAllSiswa();
-            var content = listToJsonArray(dataSiswa).getBytes();
-            exchange.getResponseHeaders().set("Content-Type", "application/json");
-            exchange.sendResponseHeaders(200, content.length);
-
-            var out = exchange.getResponseBody();
-            out.write(content);
-            out.close();
-        };
-
-        HttpHandler postHandler = exchange -> {
-            var body = new String(exchange.getRequestBody().readAllBytes());
-            var map = new HashMap<String, String>();
-            for (var field : body.split("&")) {
-                String[] pair = field.split("=");
-                map.put(pair[0], URLDecoder.decode(pair[1], Charset.defaultCharset()));
-            }
-            String[] keys = {"nis", "nama"};
-            for (var key : keys) {
-                if (!map.containsKey(key)) {
-                    exchange.sendResponseHeaders(400, -1);
-                    return;
-                }
-            }
-            var siswa = db.addSiswa(map);
-            if (siswa == null) {
-                exchange.sendResponseHeaders(500, -1);
-                return;
-            }
-            var content = mapToJsonObject(siswa).getBytes();
-            exchange.getResponseHeaders().set("Content-Type", "application/json");
-            exchange.sendResponseHeaders(201, content.length);
-            var out = exchange.getResponseBody();
-            out.write(content);
-            out.close();
-        };
-
-        HttpHandler putHandler = exchange -> {
-            var path = exchange.getRequestURI().getPath();
-            var nis = path.substring(path.lastIndexOf('/') + 1);
-            var body = new String(exchange.getRequestBody().readAllBytes());
-            var map = new HashMap<String, String>();
-            for (var field : body.split("&")) {
-                String[] pair = field.split("=");
-                map.put(pair[0], URLDecoder.decode(pair[1], Charset.defaultCharset()));
-            }
-            var siswa = db.updateSiswa(nis, map);
-            if (siswa == null) {
-                exchange.sendResponseHeaders(500, -1);
-                return;
-            }
-            var content = mapToJsonObject(siswa).getBytes();
-            exchange.getResponseHeaders().set("Content-Type", "application/json");
-            exchange.sendResponseHeaders(200, content.length);
-            var out = exchange.getResponseBody();
-            out.write(content);
-            out.close();
-        };
-
-        HttpHandler deleteHandler = exchange -> {
-            var path = exchange.getRequestURI().getPath();
-            var nis = path.substring(path.lastIndexOf('/') + 1);
-            db.deleteSiswa(nis);
-            exchange.sendResponseHeaders(204, -1);
-        };
-
-        HttpContext[] contexts = new HttpContext[3];
         server = HttpServer.create(new InetSocketAddress(port), 0);
-        contexts[0] = server.createContext("/", viewHandler);
-        contexts[1] = server.createContext("/static", staticHandler);
-        contexts[2] = server.createContext("/api/data-siswa", exchange -> {
-            switch (exchange.getRequestMethod()) {
-                case "GET" -> getHandler.handle(exchange);
-                case "POST" -> postHandler.handle(exchange);
-                case "PUT" -> putHandler.handle(exchange);
-                case "DELETE" -> deleteHandler.handle(exchange);
-                default -> exchange.sendResponseHeaders(405, -1);
-            }
-        });
-        for (var context : contexts) {
-            context.getFilters().add(Filter.afterHandler("Session Log", this::logSession));
+        server.createContext("/", staticHandler);
+        server.createContext("/api/categories", this::handleCategories);
+        server.createContext("/api/transactions", this::handleTransactions);
+    }
+
+    private void handleCategories(HttpExchange exchange) throws IOException {
+        if ("GET".equals(exchange.getRequestMethod())) {
+            var categories = db.getAllCategories();
+            var json = gson.toJson(categories);
+            sendResponse(exchange, 200, json);
+        } else {
+            exchange.sendResponseHeaders(405, -1);
         }
     }
 
-    private void logSession(HttpExchange exchange) {
-        var method = exchange.getRequestMethod();
-        var path = exchange.getRequestURI().getPath();
-        var code = exchange.getResponseCode();
-        main.log(String.format("%s %s %s", method, path, code));
+    private void handleTransactions(HttpExchange exchange) throws IOException {
+        switch (exchange.getRequestMethod()) {
+            case "GET" -> {
+                var transactions = db.getAllTransactions();
+                var json = gson.toJson(transactions);
+                sendResponse(exchange, 200, json);
+            }
+            case "POST" -> {
+                var transaction = gson.fromJson(new String(exchange.getRequestBody().readAllBytes()), Transaction.class);
+                var newTransaction = db.addTransaction(transaction);
+                var json = gson.toJson(newTransaction);
+                sendResponse(exchange, 201, json);
+            }
+            case "PUT" -> {
+                var transaction = gson.fromJson(new String(exchange.getRequestBody().readAllBytes()), Transaction.class);
+                var updatedTransaction = db.updateTransaction(transaction);
+                var json = gson.toJson(updatedTransaction);
+                sendResponse(exchange, 200, json);
+            }
+            case "DELETE" -> {
+                var id = Integer.parseInt(exchange.getRequestURI().getPath().substring(exchange.getRequestURI().getPath().lastIndexOf('/') + 1));
+                db.deleteTransaction(id);
+                exchange.sendResponseHeaders(204, -1);
+            }
+            default -> exchange.sendResponseHeaders(405, -1);
+        }
     }
 
-    private String listToJsonArray(List<Map<String, String>> list) {
-        var sb = new StringBuilder();
-        sb.append("[");
-        for (var i = 0; i < list.size(); i++) {
-            sb.append(mapToJsonObject(list.get(i)));
-            if (i < list.size() - 1) {
-                sb.append(",");
-            }
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
-    private String mapToJsonObject(Map<String, String> map) {
-        var sb = new StringBuilder();
-        sb.append("{");
-        var keys = map.keySet().toArray(new String[0]);
-        for (var i = 0; i < keys.length; i++) {
-
-            var value = map.get(keys[i]);
-            sb.append(String.format("\"%s\":\"%s\"", keys[i], value));
-            if (i < keys.length - 1) {
-                sb.append(",");
-            }
-        }
-        sb.append("}");
-        return sb.toString();
+    private void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
+        exchange.getResponseHeaders().set("Content-Type", "application/json");
+        exchange.sendResponseHeaders(statusCode, response.getBytes().length);
+        var out = exchange.getResponseBody();
+        out.write(response.getBytes());
+        out.close();
     }
 
     public void start() {

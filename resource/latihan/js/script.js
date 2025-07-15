@@ -66,12 +66,28 @@ function loadData() {
   Promise.all([
     fetch("/api/categories").then((res) => res.json()),
     fetch("/api/transactions").then((res) => res.json()),
-  ]).then(([cats, trans]) => {
+    fetch("/api/reports?type=daily").then((res) => res.json()),
+    fetch("/api/reports?type=weekly").then((res) => res.json()),
+    fetch("/api/reports?type=monthly").then((res) => res.json()),
+    fetch("/api/reports?type=yearly").then((res) => res.json()),
+  ]).then(([cats, trans, daily, weekly, monthly, yearly]) => {
     categories = cats;
     transactions = trans;
     populateCategories();
     buildTable(transactions);
+    displayReport(daily, "daily-report");
+    displayReport(weekly, "weekly-report");
+    displayReport(monthly, "monthly-report");
+    displayReport(yearly, "yearly-report");
   });
+}
+
+function displayReport(reportData, elementId) {
+  const reportElement = document.getElementById(elementId);
+  reportElement.innerHTML = "";
+  for (const [key, value] of Object.entries(reportData)) {
+    reportElement.innerHTML += `<div>${key}: ${value}</div>`;
+  }
 }
 
 document.getElementById("btn-save").addEventListener("click", (e) => {

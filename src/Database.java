@@ -124,21 +124,48 @@ public class Database {
         return report;
     }
 
-    public Map<String, Double> getWeeklyReport() {
-        Map<String, Double> report = new HashMap<>();
-        String sql = "SELECT YEARWEEK(date) as report_week, SUM(amount) as total FROM transactions GROUP BY report_week";
-        try (Connection conn = getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+    // public Map<String, Double> getWeeklyReport() {
+    //     Map<String, Double> report = new HashMap<>();
+    //     String sql = "SELECT YEARWEEK(date) as report_week, SUM(amount) as total FROM transactions GROUP BY report_week";
+    //     try (Connection conn = getConnection();
+    //          Statement stmt = conn.createStatement();
+    //          ResultSet rs = stmt.executeQuery(sql)) {
 
-            while (rs.next()) {
-                report.put(rs.getString("report_week"), rs.getDouble("total"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+    //         while (rs.next()) {
+    //             report.put(rs.getString("report_week"), rs.getDouble("total"));
+    //         }
+    //     } catch (SQLException e) {
+    //         e.printStackTrace();
+    //     }
+    //     return report;
+    // }
+
+    public Map<String, Double> getWeeklyReport() {
+    Map<String, Double> report = new HashMap<>();
+    String sql = "SELECT YEAR(date) AS year, WEEK(date, 1) AS week, SUM(amount) AS total " +
+                 "FROM transactions GROUP BY year, week ORDER BY year, week";
+
+    try (Connection conn = getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql);
+         ResultSet rs = stmt.executeQuery()) {
+
+        while (rs.next()) {
+            int year = rs.getInt("year");
+            int week = rs.getInt("week");
+
+            // Format minggu agar selalu 2 digit (misalnya 05, 27, dll)
+            String formattedWeek = String.format("%d-W%02d", year, week);
+
+            double total = rs.getDouble("total");
+            report.put(formattedWeek, total);
         }
-        return report;
+    } catch (SQLException e) {
+        e.printStackTrace();
     }
+
+    return report;
+}
+
 
     public Map<String, Double> getMonthlyReport() {
         Map<String, Double> report = new HashMap<>();

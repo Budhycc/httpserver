@@ -2,31 +2,45 @@
 <html lang="id">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Manajemen Keuangan Pribadi</title>
-    <link
-      rel="stylesheet"
-      href="css/bootstrap.min.css"
-    />
+    <link rel="stylesheet" href="css/bootstrap.min.css" />
+    <style>
+      body {
+        background-color: #f8f9fa;
+      }
+      h1 {
+        text-align: center;
+        margin-bottom: 1em;
+      }
+      .card {
+        margin-bottom: 1em;
+      }
+      #table-transactions th,
+      #table-transactions td {
+        vertical-align: middle;
+        text-align: center;
+      }
+    </style>
   </head>
   <body>
-    <div class="container" style="padding-top: 3em">
-      <h1>Manajemen Keuangan Pribadi</h1>
-      <h3>Transaksi</h3>
-      <table class="table table-bordered" id="table-transactions">
-        <thead>
-          <tr>
-            <th colspan="6">
-              <button
-                type="button"
-                class="btn btn-primary"
-                data-bs-toggle="modal"
-                data-bs-target="#form-modal"
-              >
-                New Transaction
-              </button>
-            </th>
-          </tr>
+    <div class="container py-5">
+      <h1 class="display-5 fw-bold">Manajemen Keuangan Pribadi</h1>
+
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">Transaksi</h3>
+        <button
+          type="button"
+          class="btn btn-success"
+          data-bs-toggle="modal"
+          data-bs-target="#form-modal"
+        >
+          ➕ Tambah Transaksi
+        </button>
+      </div>
+
+      <table class="table table-striped table-bordered" id="table-transactions">
+        <thead class="table-dark">
           <tr>
             <th>#</th>
             <th>Deskripsi</th>
@@ -43,35 +57,36 @@
         </tbody>
       </table>
 
-      <h3 class="mt-5">Laporan Pengeluaran</h3>
-      <div class="row">
-        <div class="col">
-          <div class="card">
-            <div class="card-header">Laporan Harian</div>
-            <div class="card-body" id="daily-report"></div>
+      <h3 class="mt-5 mb-4">Laporan Pengeluaran</h3>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">Harian</div>
+            <div class="card-body" id="daily-report">Rp 0</div>
           </div>
         </div>
-        <div class="col">
-          <div class="card">
-            <div class="card-header">Laporan Mingguan</div>
-            <div class="card-body" id="weekly-report"></div>
+        <div class="col-md-3">
+          <div class="card shadow-sm">
+            <div class="card-header bg-warning text-dark">Mingguan</div>
+            <div class="card-body" id="weekly-report">Rp 0</div>
           </div>
         </div>
-        <div class="col">
-          <div class="card">
-            <div class="card-header">Laporan Bulanan</div>
-            <div class="card-body" id="monthly-report"></div>
+        <div class="col-md-3">
+          <div class="card shadow-sm">
+            <div class="card-header bg-success text-white">Bulanan</div>
+            <div class="card-body" id="monthly-report">Rp 0</div>
           </div>
         </div>
-        <div class="col">
-          <div class="card">
-            <div class="card-header">Laporan Tahunan</div>
-            <div class="card-body" id="yearly-report"></div>
+        <div class="col-md-3">
+          <div class="card shadow-sm">
+            <div class="card-header bg-danger text-white">Tahunan</div>
+            <div class="card-body" id="yearly-report">Rp 0</div>
           </div>
         </div>
       </div>
     </div>
-    <!-- form modal -->
+
+    <!-- Modal Form -->
     <div
       class="modal fade"
       id="form-modal"
@@ -83,13 +98,11 @@
     >
       <div class="modal-dialog">
         <div class="modal-content">
-          <div class="modal-header">
-            <h1 class="modal-title fs-5" id="staticBackdropLabel">
-              Form Transaksi
-            </h1>
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="staticBackdropLabel">Form Transaksi</h5>
             <button
               type="button"
-              class="btn-close"
+              class="btn-close btn-close-white"
               data-bs-dismiss="modal"
               aria-label="Close"
             ></button>
@@ -98,11 +111,11 @@
             <input type="hidden" id="id" />
             <div class="mb-3">
               <label for="description" class="form-label">Deskripsi</label>
-              <input type="text" class="form-control" id="description" />
+              <input type="text" class="form-control" id="description" placeholder="Contoh: Gaji, Belanja, dll." />
             </div>
             <div class="mb-3">
-              <label for="amount" class="form-label">Jumlah</label>
-              <input type="number" class="form-control" id="amount" />
+              <label for="amount" class="form-label">Jumlah (Rp)</label>
+              <input type="number" class="form-control" id="amount" placeholder="Masukkan nominal" />
             </div>
             <div class="mb-3">
               <label for="date" class="form-label">Tanggal</label>
@@ -110,25 +123,27 @@
             </div>
             <div class="mb-3">
               <label for="category" class="form-label">Kategori</label>
-              <select class="form-select" id="category"></select>
+              <select class="form-select" id="category">
+                <option value="" disabled selected>Pilih kategori</option>
+              </select>
             </div>
           </div>
           <div class="modal-footer">
             <button
               type="button"
-              class="btn btn-secondary"
+              class="btn btn-outline-secondary"
               data-bs-dismiss="modal"
-              aria-label="Close"
             >
-              Close
+              Batal
             </button>
             <button type="button" class="btn btn-primary" id="btn-save">
-              Save
+              Simpan
             </button>
           </div>
         </div>
       </div>
     </div>
+
     <script src="js/bootstrap.bundle.min.js"></script>
     <script src="js/script.js"></script>
   </body>

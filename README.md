@@ -13,7 +13,7 @@ Membangun **program web server** menggunakan **Java JDK HTTP Server**. Program i
 **Manajemen Keuangan Pribadi**
 
 Aplikasi ini akan memungkinkan pengguna untuk:
-- Mencatat pemasukan dan pengeluaran
+- Mencatat pengeluaran
 - Melihat daftar transaksi keuangan
 - Mengubah atau menghapus data transaksi
 - Menampilkan laporan keuangan berdasarkan waktu
